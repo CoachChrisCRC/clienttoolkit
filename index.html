@@ -7,12 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@400;500;700&display=swap');
+        /* Base Imports for Aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Oswald:wght@400;500;700&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
             background-color: #000000;
             color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column; /* Allows main content and footer to stack */
+            align-items: center;
         }
 
         .font-brand {
@@ -23,751 +28,824 @@
             letter-spacing: 0.15em;
         }
 
-        .link-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-        
-        .link-card:hover {
-            transform: translateY(-2px);
-            background-color: #ffffff;
-            color: #000000;
-        }
-
-        .link-card:hover .arrow-icon {
-            transform: translateX(4px);
-        }
-
-        .link-card:active {
-            transform: translateY(0);
-        }
-
-        /* Generic Modal Styles */
-        .tool-modal {
-            transition: opacity 0.3s ease;
-            z-index: 50;
-        }
-        
-        .modal-open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .modal-closed {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* Specific Styles for Timer (Monochromatic Inversion) */
-        .state-work {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-        }
-
-        .state-rest {
-            background-color: #000000 !important;
-            color: #ffffff !important;
-        }
-        
-        .state-set-rest {
-            background-color: #333333 !important;
-            color: #fefefe !important;
-        }
-
         /* Input styling for the dark theme */
         input, select {
             background-color: #111111;
             border: 1px solid #333333;
             color: #ffffff;
             padding: 0.75rem;
-            border-radius: 0.25rem;
+            border-radius: 0.5rem;
             transition: border-color 0.2s;
         }
 
         input:focus, select:focus {
             outline: none;
             border-color: #ffffff;
+            box-shadow: 0 0 0 1px #ffffff;
+        }
+        
+        /* Utility class for button hover effect */
+        .btn-primary:hover {
+            background-color: #2e2e2e;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Custom modal styles for confirmation (Toast) */
+        .modal-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10B981; /* Green-500 */
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        .modal-toast.show {
+            opacity: 1;
+        }
+        
+        /* NEW: Main Application Modal Styles (Overlay and Content) */
+        .app-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50; 
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .app-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .app-modal-content {
+            /* Ensures it looks like a contained app, scrolls internally, and is centered */
+            width: 95%; 
+            max-width: 500px;
+            height: 100%; 
+            max-height: 90vh; 
+            background-color: #000000; 
+            border-radius: 0.5rem;
+            overflow-y: auto; 
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+            /* Flex layout to push the internal footer to the bottom */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-modal-overlay.active .app-modal-content {
+            transform: scale(1);
+        }
+
+        /* Initial page content styling */
+        .page-header {
+            width: 100%;
+            max-width: 90%;
+            padding: 2rem 1.5rem 1rem;
+            text-align: center;
+        }
+        .page-tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            max-width: 900px;
+            width: 90%;
+            padding-bottom: 2rem;
+        }
+        .tool-card {
+            background-color: #111111;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            border: 2px solid #333333;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            background-color: #1e1e1e;
+            border-color: #ffffff;
+        }
+        .tool-card-disabled {
+             opacity: 0.5;
+             cursor: default;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center relative">
-
-    <header class="w-full max-w-md px-6 py-8 flex justify-between items-start">
-        <div class="flex flex-col select-none">
-            <h1 class="font-brand font-bold text-4xl leading-none tracking-wide text-white mb-1">COACH CHRIS</h1>
-            <h2 class="font-brand font-bold text-lg leading-none text-gray-400 mb-[2px]">CIRCULAR ROOTS COACHING</h2>
-            <h3 class="font-brand font-bold text-lg leading-none text-gray-600">TRAIN UNCNVNTNL</h3>
-        </div>
-        
-        <button class="text-white hover:text-gray-300 transition-colors pt-1" aria-label="Menu">
-            <i data-lucide="menu" class="w-8 h-8"></i>
-        </button>
+<body>
+    
+    <header class="page-header mt-8">
+        <h1 class="font-brand font-extrabold text-6xl leading-none tracking-wide text-white mb-2">TOOL KIT</h1>
+        <h2 class="font-brand font-bold text-xl leading-none text-gray-400 mb-4">COACH CHRIS CLIENT RESOURCE PORTAL</h2>
+        <p class="text-gray-500 max-w-lg mx-auto">Select a tool below to access workout builders, performance calculators, and educational content.</p>
     </header>
 
-    <main class="w-full max-w-md px-6 flex-grow pb-12">
+    <div class="page-tool-grid flex-grow">
         
-        <div class="text-center mb-10 mt-4">
-            <div class="inline-block p-1 border-2 border-white rounded-full mb-4">
-                <div class="w-24 h-24 bg-gray-900 rounded-full flex items-center justify-center overflow-hidden">
-                    <i data-lucide="dumbbell" class="w-10 h-10 text-white"></i>
-                </div>
-            </div>
-            <h2 class="text-2xl font-bold mb-2">Client Tool Kit</h2>
-            <p class="text-gray-400 text-sm max-w-xs mx-auto">
-                No-nonsense tools to optimize your training. 
-                <br>Calculate, track, and execute.
-            </p>
+        <div id="launch-wod-btn" onclick="openModal()" class="tool-card flex flex-col items-center justify-center text-center bg-emerald-700/50 hover:bg-emerald-700">
+            <i data-lucide="dumbbell" class="w-12 h-12 text-white mb-3"></i>
+            <h3 class="font-brand text-2xl font-bold uppercase">WOD Generator</h3>
+            <p class="text-sm text-gray-200 mt-1">Generate a structured workout instantly.</p>
         </div>
 
-        <div class="space-y-4 flex flex-col w-full">
-
-            <button onclick="openModal('wod')" class="link-card block w-full border border-white p-4 rounded-lg group text-left">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="zap" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">WOD Generator</span>
-                    </div>
-                    <i data-lucide="arrow-right" class="arrow-icon w-5 h-5 transition-transform duration-300"></i>
-                </div>
-            </button>
-
-            <button onclick="openModal('one-rm')" class="link-card block w-full border border-white p-4 rounded-lg group text-left">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="dumbbell" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">1RM Calculator</span>
-                    </div>
-                    <i data-lucide="arrow-right" class="arrow-icon w-5 h-5 transition-transform duration-300"></i>
-                </div>
-            </button>
-
-            <button onclick="openModal('macro')" class="link-card block w-full border border-white p-4 rounded-lg group text-left">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="utensils" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">Calorie & Macro Calculator</span>
-                    </div>
-                    <i data-lucide="arrow-right" class="arrow-icon w-5 h-5 transition-transform duration-300"></i>
-                </div>
-            </button>
-            
-            <button onclick="openModal('bodyfat')" class="link-card block w-full border border-white p-4 rounded-lg group text-left">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="scan" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">Estimated Bodyfat Calculator</span>
-                    </div>
-                    <i data-lucide="arrow-right" class="arrow-icon w-5 h-5 transition-transform duration-300"></i>
-                </div>
-            </button>
-
-            <button onclick="openModal('timer')" class="link-card block w-full border border-white p-4 rounded-lg group text-left">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="timer" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">Interval Timer</span>
-                    </div>
-                    <i data-lucide="arrow-right" class="arrow-icon w-5 h-5 transition-transform duration-300"></i>
-                </div>
-            </button>
-
-            <a href="#" class="link-card block w-full bg-white text-black border border-white p-4 rounded-lg hover:bg-gray-200 hover:text-black mt-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <i data-lucide="mail" class="w-5 h-5"></i>
-                        <span class="font-bold text-lg uppercase tracking-wide">Join the Newsletter</span>
-                    </div>
-                    <span class="text-xs font-bold border border-black px-2 py-0.5 rounded">FREE</span>
-                </div>
-            </a>
-
+        <div class="tool-card tool-card-disabled flex flex-col items-center justify-center text-center">
+            <i data-lucide="weight" class="w-12 h-12 text-white mb-3"></i>
+            <h3 class="font-brand text-2xl font-bold uppercase">RPE / RIR Calculator</h3>
+            <p class="text-sm text-gray-500 mt-1">Coming Soon: Calculate intensity scores.</p>
+        </div>
+        
+        <div class="tool-card tool-card-disabled flex flex-col items-center justify-center text-center">
+            <i data-lucide="calendar" class="w-12 h-12 text-white mb-3"></i>
+            <h3 class="font-brand text-2xl font-bold uppercase">Custom Cycle Planner</h3>
+            <p class="text-sm text-gray-500 mt-1">Coming Soon: Plan your training blocks.</p>
         </div>
 
-        <div class="flex justify-center space-x-6 mt-12">
-            <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="instagram" class="w-6 h-6"></i>
-            </a>
-            <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="twitter" class="w-6 h-6"></i>
-            </a>
-            <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="youtube" class="w-6 h-6"></i>
-            </a>
-        </div>
-
-    </main>
-
-    <footer class="w-full text-center py-6 text-gray-600 text-xs">
-        <p>&copy; 2024 Circular Roots Coaching. All Rights Reserved.</p>
-    </footer>
-
-    <div id="wod-modal" class="tool-modal fixed inset-0 bg-black flex flex-col items-center justify-start modal-closed">
-        <button onclick="closeModal('wod')" class="absolute top-6 right-6 p-2 text-white hover:opacity-70 transition-opacity">
-            <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-        <div class="w-full max-w-md p-6 sm:p-8 pt-16 overflow-y-auto h-full">
-            <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-8 text-center">WOD Generator</h2>
-            <p class="text-center text-sm text-gray-400 mb-6">Generate a quick 15-30 minute workout.</p>
-
-            <div id="wod-input-form" class="space-y-4">
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Equipment</span>
-                    <select id="wod-equipment" class="w-full">
-                        <option value="combined">Kettlebell & Bodyweight (Combined)</option>
-                        <option value="kettlebell">Kettlebell Only</option>
-                        <option value="bodyweight">Bodyweight Only</option>
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Workout Format</span>
-                    <select id="wod-format" class="w-full">
-                        <option value="random">Random Format</option>
-                        <option value="AMRAP">AMRAP (As Many Rounds As Possible)</option>
-                        <option value="EMOM">EMOM (Every Minute On the Minute)</option>
-                        <option value="FOR TIME">FOR TIME (Fixed Rounds)</option>
-                        <option value="CHIPPER">Chipper (High Rep)</option>
-                        <option value="TABATA">Timed Intervals (Tabata)</option>
-                    </select>
-                </label>
-                
-                <button onclick="generateWOD()" class="w-full mt-6 py-4 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
-                    Generate WOD
-                </button>
-            </div>
-
-            <div id="wod-result" class="mt-8 pt-6 border-t border-gray-700 space-y-6 hidden">
-                <h3 class="text-xl font-bold uppercase tracking-wider mb-2">Your Workout of the Day:</h3>
-                
-                <div class="p-4 border border-white rounded-lg">
-                    <p class="text-sm uppercase text-gray-400 mb-1">Format</p>
-                    <p class="text-3xl font-brand font-bold" id="wod-format-display">AMRAP</p>
-                    <p class="text-sm uppercase text-gray-400 mt-3 mb-1">Time Goal / Structure</p>
-                    <p class="text-lg font-bold" id="wod-goal-display">20 Minute Time Cap</p>
-                </div>
-
-                <div class="space-y-4" id="wod-instructions">
-                    </div>
-                
-                <button onclick="resetWOD()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
-                    GENERATE NEW WOD
-                </button>
-            </div>
-            <p id="wod-error" class="text-red-500 text-sm mt-4 hidden text-center">
-                An error occurred during generation.
-            </p>
-        </div>
     </div>
-
-    <div id="one-rm-modal" class="tool-modal fixed inset-0 bg-black flex flex-col items-center justify-start modal-closed">
-        <button onclick="closeModal('one-rm')" class="absolute top-6 right-6 p-2 text-white hover:opacity-70 transition-opacity">
-            <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-        <div class="w-full max-w-md p-6 sm:p-8 pt-16 overflow-y-auto h-full">
-            <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-8 text-center">1RM Calculator</h2>
+    
+    <footer class="p-10 bg-black text-neutral-400 border-t border-white/20 mt-auto w-full">
+        <div class="max-w-4xl mx-auto text-center">
+            <p class="text-xs mb-6 leading-relaxed">
+                General Fitness Disclaimer: Always consult your medical professional or doctor before you begin any fitness regime or make changes to your diet. This site provides general information for educational purposes only and is not intended to diagnose or treat any medical condition. You engage in physical activity at your own risk.
+            </p>
+            <p class="text-sm font-semibold text-white mb-2">
+                &copy; <span id="current-year-page">2025</span> COACH CHRIS | CIRCULAR ROOTS COACHING | TRAIN UNCNVNTNL. All rights reserved.
+            </p>
+            <p class="text-sm font-medium">
+                Fitter. Stronger. Better.
+            </p>
+        </div>
+    </footer>
+    
+    <div id="app-modal-overlay" class="app-modal-overlay" onclick="closeModal(event)">
+        <div id="app-modal-content" class="app-modal-content" onclick="event.stopPropagation()">
             
-            <div id="one-rm-input-form" class="space-y-4">
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Weight Lifted</span>
-                    <div class="flex space-x-2">
-                        <input id="one-rm-weight" type="number" placeholder="e.g., 100" class="flex-grow">
-                        <select id="one-rm-unit" class="w-20">
-                            <option value="kg">kg</option>
-                            <option value="lb">lb</option>
-                        </select>
-                    </div>
-                </label>
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Repetitions Performed (1-10)</span>
-                    <input id="one-rm-reps" type="number" min="1" max="10" placeholder="e.g., 5" class="w-full">
-                </label>
-                
-                <button onclick="calculateOneRM()" class="w-full mt-6 py-4 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
-                    Calculate 1RM
-                </button>
-            </div>
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-white hover:text-red-500 transition-colors z-10">
+                <i data-lucide="x" class="w-8 h-8"></i>
+            </button>
+            
+            <header class="w-full max-w-md px-6 py-8 flex justify-between items-start mx-auto">
+                <div class="flex flex-col select-none">
+                    <h1 class="font-brand font-extrabold text-4xl leading-none tracking-wide text-white mb-1">COACH CHRIS</h1>
+                    <h2 class="font-brand font-bold text-lg leading-none text-gray-400 mb-[2px]">CIRCULAR ROOTS COACHING</h2>
+                    <h3 class="font-brand font-bold text-lg leading-none text-gray-600">TRAIN UNCNVNTNL</h3>
+                </div>
+                <div class="text-white pt-1">
+                    <i data-lucide="zap" class="w-8 h-8"></i>
+                </div>
+            </header>
 
-            <div id="one-rm-result" class="mt-8 pt-6 border-t border-gray-700 space-y-4 hidden">
-                <h3 class="text-xl font-bold uppercase tracking-wider mb-2">Estimated Strength</h3>
-                <div class="p-4 border border-white rounded-lg">
-                    <p class="text-sm uppercase text-gray-400">Your Max Lift (1RM - Epley Formula)</p>
-                    <p class="text-5xl font-brand font-bold mt-1">
-                        <span id="result-weight">0</span> <span id="result-unit" class="text-xl">kg</span>
+            <main class="w-full max-w-md p-6 sm:p-8 mx-auto flex-grow">
+                
+                <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-4 text-center">WOD Generator</h2>
+                <p class="text-center text-sm text-gray-400 mb-8">Generate a quick 15-30 minute workout.</p>
+
+                <div id="wod-input-form" class="space-y-4">
+                    <label class="block">
+                        <span class="text-sm font-bold block mb-1">Equipment</span>
+                        <select id="wod-equipment" class="w-full">
+                            <option value="combined">Kettlebell & Bodyweight (Combined)</option>
+                            <option value="kettlebell">Kettlebell Only</option>
+                            <option value="bodyweight">Bodyweight Only</option>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold block mb-1">Workout Format</span>
+                        <select id="wod-format" class="w-full">
+                            <option value="random">Random Format</option>
+                            <option value="AMRAP">AMRAP (As Many Rounds As Possible)</option>
+                            <option value="EMOM">EMOM (Every Minute On the Minute)</option>
+                            <option value="FOR TIME">FOR TIME (Fixed Rounds)</option>
+                            <option value="CHIPPER">Chipper (High Rep)</option>
+                            <option value="LADDER 10-1">Descending Ladder (10-1)</option>
+                            <option value="LADDER 20-2">Descending Ladder (20-2)</option>
+                            <option value="TABATA">Timed Intervals (Tabata: 20s/10s)</option>
+                            <option value="INTERVAL_30_30">Timed Intervals (30s Work / 30s Rest)</option>
+                            <option value="INTERVAL_60_30">Timed Intervals (60s Work / 30s Rest)</option>
+                            <option value="INTERVAL_90_30">Timed Intervals (90s Work / 30s Rest)</option>
+                        </select>
+                    </label>
+                    
+                    <button onclick="generateWOD()" class="w-full mt-6 py-4 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
+                        Generate WOD
+                    </button>
+                </div>
+
+                <div id="wod-result" class="mt-8 pt-6 border-t border-gray-700 space-y-6 hidden">
+                    <h3 class="text-xl font-bold uppercase tracking-wider mb-2">Your Workout of the Day:</h3>
+                    
+                    <div class="p-4 border border-white rounded-lg" id="wod-summary-container">
+                        <p class="text-sm uppercase text-gray-400 mb-1">Purpose</p>
+                        <p class="text-lg font-bold mb-3 text-emerald-400" id="wod-purpose-display">Placeholder</p>
+                        
+                        <p class="text-sm uppercase text-gray-400 mb-1">Format</p>
+                        <p class="text-3xl font-brand font-bold" id="wod-format-display">AMRAP</p>
+                        
+                        <p class="text-sm uppercase text-gray-400 mt-3 mb-1">Time Goal / Structure</p>
+                        <p class="text-lg font-bold" id="wod-goal-display">20 Minute Time Cap</p>
+                    </div>
+
+                    <div class="space-y-4" id="wod-instructions">
+                        </div>
+                    
+                    <button onclick="copyWODToClipboard()" class="w-full flex items-center justify-center space-x-2 py-3 bg-gray-700 text-white text-base font-semibold uppercase rounded-md transition-all btn-primary">
+                        <i data-lucide="clipboard" class="w-5 h-5"></i>
+                        <span>Copy WOD to Clipboard</span>
+                    </button>
+
+                    <button onclick="resetWOD()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
+                        GENERATE NEW WOD
+                    </button>
+                </div>
+                <p id="wod-error" class="text-red-500 text-sm mt-4 hidden text-center">
+                    An error occurred during generation.
+                </p>
+            </main>
+            
+            <footer class="p-10 bg-black text-neutral-400 border-t border-white/20 mt-auto w-full">
+                <div class="max-w-4xl mx-auto text-center">
+                    <p class="text-xs mb-6 leading-relaxed">
+                        Disclaimer: Always consult a professional before beginning any fitness regime. Use this tool at your own risk.
+                    </p>
+                    <p class="text-sm font-semibold text-white mb-2">
+                        &copy; <span id="current-year-modal">2025</span> COACH CHRIS. 
                     </p>
                 </div>
-                <div id="one-rm-zones">
-                    </div>
-                <button onclick="resetOneRM()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
-                    RECALCULATE
-                </button>
-            </div>
-            <p id="one-rm-error" class="text-red-500 text-sm mt-4 hidden text-center">
-                Please enter a valid weight (1+) and reps (1-10).
-            </p>
-
+            </footer>
         </div>
     </div>
 
 
-    <div id="macro-modal" class="tool-modal fixed inset-0 bg-black flex flex-col items-center justify-start modal-closed">
-        <button onclick="closeModal('macro')" class="absolute top-6 right-6 p-2 text-white hover:opacity-70 transition-opacity">
-            <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-        <div class="w-full max-w-md p-6 sm:p-8 pt-16 overflow-y-auto h-full">
-            <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-8 text-center">Calorie & Macro Calculator</h2>
-            
-            <div id="macro-input-form" class="space-y-4">
-                
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Units</span>
-                    <select id="macro-unit-system" class="w-full" onchange="toggleMacroUnits()">
-                        <option value="metric">Metric (kg, cm)</option>
-                        <option value="imperial">Imperial (lb, ft/in)</option>
-                    </select>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Gender</span>
-                    <select id="macro-gender" class="w-full">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </label>
-                <div class="grid grid-cols-3 gap-3">
-                    <label class="block">
-                        <span class="text-sm font-bold block mb-1">Age</span>
-                        <input id="macro-age" type="number" min="15" max="100" placeholder="Years" class="w-full">
-                    </label>
-
-                    <div id="macro-height-cm-group" class="block col-span-2">
-                        <span class="text-sm font-bold block mb-1">Height (cm)</span>
-                        <input id="macro-height-cm" type="number" min="100" max="250" placeholder="e.g., 175" class="w-full">
-                    </div>
-                    <div id="macro-height-ftin-group" class="grid grid-cols-2 gap-2 col-span-2 hidden">
-                        <div>
-                            <span class="text-sm font-bold block mb-1">Height (ft)</span>
-                            <input id="macro-height-ft" type="number" min="3" max="8" placeholder="e.g., 5" class="w-full">
-                        </div>
-                        <div>
-                            <span class="text-sm font-bold block mb-1">Height (in)</span>
-                            <input id="macro-height-in" type="number" min="0" max="11" placeholder="e.g., 9" class="w-full">
-                        </div>
-                    </div>
-                </div>
-
-                <label class="block">
-                    <span id="macro-weight-label" class="text-sm font-bold block mb-1">Weight (kg)</span>
-                    <input id="macro-weight" type="number" min="30" max="300" placeholder="e.g., 75" class="w-full">
-                </label>
-
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Activity Level</span>
-                    <select id="macro-activity" class="w-full">
-                        <option value="1.2">Sedentary (Little or no exercise)</option>
-                        <option value="1.375">Light (1-3 days/week)</option>
-                        <option value="1.55">Moderate (3-5 days/week)</option>
-                        <option value="1.725">High (6-7 days/week)</option>
-                        <option value="1.9">Extreme (Athlete, 2x per day)</option>
-                    </select>
-                </label>
-                
-                <button onclick="calculateMacros()" class="w-full mt-6 py-4 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
-                    Calculate Macros
-                </button>
-            </div>
-
-            <div id="macro-result" class="mt-8 pt-6 border-t border-gray-700 space-y-6 hidden">
-                <h3 class="text-xl font-bold uppercase tracking-wider mb-4">Results Summary</h3>
-
-                <div class="p-4 border border-white rounded-lg text-center">
-                    <p class="text-sm uppercase text-gray-400">Your Total Daily Energy Expenditure (TDEE)</p>
-                    <p class="text-5xl font-brand font-bold mt-1" id="tdee-display">2500</p>
-                    <p class="text-lg uppercase text-gray-400">Maintenance / Recomp Calories</p>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold uppercase">Calorie Goals (300 kcal Adjustment)</h4>
-                    <div class="grid grid-cols-2 gap-4 text-center">
-                        <div class="bg-gray-900 p-3 rounded-lg">
-                            <p class="text-xs uppercase text-gray-500">Weight-loss / Fat-loss</p>
-                            <p class="text-2xl font-brand font-bold mt-1" id="cutting-cal">2200 kcal</p>
-                        </div>
-                        <div class="bg-gray-900 p-3 rounded-lg">
-                            <p class="text-xs uppercase text-gray-500">Muscle Gain</p>
-                            <p class="text-2xl font-brand font-bold mt-1" id="bulking-cal">2800 kcal</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold uppercase">Macro Split (40P/30C/30F)</h4>
-                    <p class="text-sm text-gray-500 text-center">Based on Maintenance Calories</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-gray-900 p-3 rounded-lg text-center">
-                            <p class="text-xs uppercase text-red-500 font-bold">Protein</p>
-                            <p class="text-2xl font-brand font-bold mt-1" id="macro-protein">183g</p>
-                        </div>
-                        <div class="bg-gray-900 p-3 rounded-lg text-center">
-                            <p class="text-xs uppercase text-blue-500 font-bold">Carbs</p>
-                            <p class="text-2xl font-brand font-bold mt-1" id="macro-carbs">187g</p>
-                        </div>
-                        <div class="bg-gray-900 p-3 rounded-lg text-center">
-                            <p class="text-xs uppercase text-green-500 font-bold">Fat</p>
-                            <p class="text-2xl font-brand font-bold mt-1" id="macro-fat">83g</p>
-                        </div>
-                    </div>
-                </div>
-                <button onclick="resetMacro()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
-                    RECALCULATE
-                </button>
-            </div>
-            <p id="macro-error" class="text-red-500 text-sm mt-4 hidden text-center">
-                Please ensure all fields are filled out with valid numbers.
-            </p>
-        </div>
+    <div id="copy-modal" class="modal-toast">
+        WOD copied to clipboard!
     </div>
 
-
-    <div id="bodyfat-modal" class="tool-modal fixed inset-0 bg-black flex flex-col items-center justify-start modal-closed">
-        <button onclick="closeModal('bodyfat')" class="absolute top-6 right-6 p-2 text-white hover:opacity-70 transition-opacity">
-            <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-        <div class="w-full max-w-md p-6 sm:p-8 pt-16 overflow-y-auto h-full">
-            <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-8 text-center">Bodyfat Calculator</h2>
-            <p class="text-center text-sm text-gray-400 mb-6">Uses the US Navy Body Fat Formula.</p>
-
-            <div id="bodyfat-input-form" class="space-y-4">
-
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Units</span>
-                    <select id="bodyfat-unit-system" class="w-full" onchange="toggleBodyfatUnits()">
-                        <option value="metric">Metric (cm)</option>
-                        <option value="imperial">Imperial (in, ft/in)</option>
-                    </select>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm font-bold block mb-1">Gender</span>
-                    <select id="bodyfat-gender" class="w-full" onchange="toggleHipInput()">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </label>
-
-                <div id="bodyfat-height-cm-group" class="block">
-                    <span class="text-sm font-bold block mb-1">Height (cm)</span>
-                    <input id="bodyfat-height-cm" type="number" min="100" max="250" placeholder="e.g., 175" class="w-full">
-                </div>
-                <div id="bodyfat-height-ftin-group" class="grid grid-cols-2 gap-2 hidden">
-                    <div>
-                        <span class="text-sm font-bold block mb-1">Height (ft)</span>
-                        <input id="bodyfat-height-ft" type="number" min="3" max="8" placeholder="e.g., 5" class="w-full">
-                    </div>
-                    <div>
-                        <span class="text-sm font-bold block mb-1">Height (in)</span>
-                        <input id="bodyfat-height-in" type="number" min="0" max="11" placeholder="e.g., 9" class="w-full">
-                    </div>
-                </div>
-
-                <label class="block">
-                    <span id="bodyfat-neck-label" class="text-sm font-bold block mb-1">Neck Circumference (cm)</span>
-                    <input id="bodyfat-neck" type="number" min="20" max="80" placeholder="e.g., 38" class="w-full">
-                </label>
-                <label class="block">
-                    <span id="bodyfat-waist-label" class="text-sm font-bold block mb-1">Waist Circumference (cm) - measured at navel</span>
-                    <input id="bodyfat-waist" type="number" min="50" max="150" placeholder="e.g., 85" class="w-full">
-                </label>
-                <label id="bodyfat-hip-field" class="block hidden">
-                    <span id="bodyfat-hip-label" class="text-sm font-bold block mb-1">Hip Circumference (cm) - Women Only</span>
-                    <input id="bodyfat-hip" type="number" min="60" max="160" placeholder="e.g., 95" class="w-full">
-                </label>
-                
-                <button onclick="calculateBodyFat()" class="w-full mt-6 py-4 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
-                    Calculate Bodyfat
-                </button>
-            </div>
-
-            <div id="bodyfat-result" class="mt-8 pt-6 border-t border-gray-700 space-y-4 hidden">
-                <h3 class="text-xl font-bold uppercase tracking-wider mb-2">Estimated Body Composition</h3>
-                <div class="p-4 border border-white rounded-lg text-center">
-                    <p class="text-sm uppercase text-gray-400">Body Fat Percentage</p>
-                    <p class="text-5xl font-brand font-bold mt-1" id="bf-result-percent">15.0%</p>
-                    <p class="text-lg font-bold mt-1">Category: <span id="bf-result-category">Acceptable</span></p>
-                </div>
-                <button onclick="resetBodyFat()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
-                    RECALCULATE
-                </button>
-            </div>
-            <p id="bodyfat-error" class="text-red-500 text-sm mt-4 hidden text-center">
-                Please ensure all required measurements are entered with valid numbers.
-            </p>
-        </div>
-    </div>
-
-
-    <div id="timer-modal" class="tool-modal fixed inset-0 bg-black flex flex-col items-center justify-center modal-closed">
-        
-        <button onclick="closeModal('timer')" class="absolute top-6 right-6 p-2 text-current hover:opacity-70 transition-opacity">
-            <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-
-        <div id="timer-container" class="w-full max-w-md h-full flex flex-col justify-start p-8 text-center transition-colors duration-300">
-            
-            <div id="timer-settings-panel" class="w-full pt-16 space-y-4">
-                <h2 class="font-brand text-4xl uppercase tracking-widest font-bold mb-8 text-center">Interval Timer</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <label class="block">
-                        <span class="text-sm font-bold block mb-1">Work Time (s)</span>
-                        <input id="timer-work-time" type="number" value="45" min="5" max="300" class="w-full text-center">
-                    </label>
-                    <label class="block">
-                        <span class="text-sm font-bold block mb-1">Rest Time (s)</span>
-                        <input id="timer-rest-time" type="number" value="15" min="0" max="300" class="w-full text-center">
-                    </label>
-                    <label class="block">
-                        <span class="text-sm font-bold block mb-1">Cycles per Set</span>
-                        <input id="timer-cycles-per-set" type="number" value="8" min="1" max="50" class="w-full text-center">
-                    </label>
-                    <label class="block">
-                        <span class="text-sm font-bold block mb-1">Total Sets</span>
-                        <input id="timer-total-sets" type="number" value="3" min="1" max="20" class="w-full text-center">
-                    </label>
-                </div>
-                
-                <label class="block pt-4">
-                    <span class="text-sm font-bold block mb-1">Rest Between Sets (s) - Optional</span>
-                    <input id="timer-set-rest-time" type="number" value="60" min="0" max="600" class="w-full text-center">
-                </label>
-
-                <button onclick="loadTimerSettings()" class="w-full py-4 mt-6 bg-white text-black text-xl font-bold uppercase rounded-sm hover:opacity-80 transition-opacity">
-                    Set Timer
-                </button>
-            </div>
-
-            <div id="timer-display-panel" class="hidden h-full flex flex-col justify-between py-12">
-                <div class="pt-12">
-                    <h2 id="timer-label" class="font-brand text-4xl uppercase tracking-widest font-bold mb-2">READY</h2>
-                    <div class="flex justify-center items-center space-x-4 font-mono text-sm opacity-80">
-                        <span class="flex items-center space-x-2">CYCLE <span id="cycle-display" class="text-xl font-bold">1</span> / <span id="cycle-total-display">8</span></span>
-                        <span class="text-2xl font-bold">|</span>
-                        <span class="flex items-center space-x-2">SET <span id="set-display" class="text-xl font-bold">1</span> / <span id="set-total-display">3</span></span>
-                    </div>
-                </div>
-
-                <div class="flex-grow flex items-center justify-center">
-                    <div id="time-display" class="font-brand text-[10rem] leading-none font-bold tabular-nums">
-                        45
-                    </div>
-                </div>
-
-                <div class="pb-12 space-y-4 w-full">
-                    <button id="start-btn" onclick="toggleTimer()" class="w-full py-5 text-xl font-bold uppercase tracking-wider border-2 border-current rounded-none hover:opacity-80 transition-opacity flex items-center justify-center gap-3">
-                        <i data-lucide="play" class="w-6 h-6 fill-current"></i>
-                        <span id="start-text">START</span>
-                    </button>
-
-                    <button onclick="showSettings()" class="w-full py-3 text-sm font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
-                        CHANGE SETTINGS
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
+        // --- NEW MODAL CONTROL FUNCTIONS ---
+        const modalOverlay = document.getElementById('app-modal-overlay');
+
+        /**
+         * Opens the main WOD Generator modal.
+         */
+        function openModal() {
+            modalOverlay.classList.add('active');
+            // Ensure the main app content is reset when opened
+            resetWOD(); 
+        }
+
+        /**
+         * Closes the main WOD Generator modal.
+         * @param {Event} event - Optional click event to check if the click target was the overlay itself.
+         */
+        function closeModal(event) {
+            // Check if event exists AND if the clicked element is the overlay itself.
+            if (!event || event.target.id === 'app-modal-overlay') {
+                modalOverlay.classList.remove('active');
+            }
+        }
+        
         // Initialize Lucide Icons
         lucide.createIcons();
         
-        // Helper function for random selection
+        // --- JS Helper Functions ---
         const randItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
         const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const isUnilateral = (m) => m.name.includes('(per side)') || m.name.includes('(per leg)');
+        const GREEN_ASTERISK = '<span class="text-green-400">*</span>';
+        
+        // Global variable to store the plain text WOD for copying
+        let currentWODText = "";
 
-        // --- GLOBAL CONSTANTS ---
-        const LB_TO_KG = 0.453592;
-        const KG_TO_LB = 2.20462;
-        const CM_TO_IN = 0.393701;
-        const IN_TO_CM = 2.54;
-
-        // --- Universal Modal Control ---
-        function openModal(id) {
-            const modal = document.getElementById(id + '-modal');
+        /**
+         * Shows a temporary confirmation modal (Toast).
+         */
+        function showCopyConfirmation() {
+            const modal = document.getElementById('copy-modal');
             if (modal) {
-                modal.classList.remove('modal-closed');
-                modal.classList.add('modal-open');
-                if (id === 'timer') {
-                    initAudio();
-                    showSettings(); // Always start on the settings screen
+                modal.classList.add('show');
+                setTimeout(() => {
+                    modal.classList.remove('show');
+                }, 2000);
+            }
+        }
+        
+        /**
+         * Formats and copies the generated WOD to the clipboard.
+         */
+        function copyWODToClipboard() {
+            if (currentWODText) {
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = currentWODText;
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyConfirmation();
+                } catch (err) {
+                    console.error('Failed to copy text:', err);
                 }
-                if (id === 'bodyfat') {
-                    // Initialize unit and gender fields
-                    toggleBodyfatUnits(); 
-                    toggleHipInput(); 
-                }
-                if (id === 'macro') {
-                    toggleMacroUnits();
-                }
+                document.body.removeChild(tempTextarea);
             }
         }
 
-        function closeModal(id) {
-            const modal = document.getElementById(id + '-modal');
-            if (modal) {
-                modal.classList.remove('modal-open');
-                modal.classList.add('modal-closed');
-                if (id === 'timer') {
-                    resetTimer();
-                }
-            }
-        }
 
-        // --- 1. WOD GENERATOR LOGIC ---
+        // --- WOD MOVEMENT DATA (Retained from previous turn) ---
         const KB_MOVEMENTS = [
-            { name: "Kettlebell Swings", reps: [15, 20], fastReps: [10, 15] },
-            { name: "Goblet Squats", reps: [10, 15], fastReps: [8, 12] },
-            { name: "Single-Arm Clean & Press (per side)", reps: [5, 10], fastReps: [4, 8] },
-            { name: "Single-Arm Snatch (per side)", reps: [5, 10], fastReps: [4, 8] },
-            { name: "Kettlebell Halos (per direction)", reps: [8, 12], fastReps: [8, 10] },
+            { name: "Kettlebell Swings (Russian)", reps: [15, 25], fastReps: [12, 20], category: 'C' }, 
+            { name: "Goblet Squats", reps: [10, 15], fastReps: [8, 12], category: 'L' },
+            { name: "Single-Arm Clean & Press (per side)", reps: [5, 10], fastReps: [4, 6], category: 'U' }, 
+            { name: "Kettlebell Thrusters", reps: [8, 12], fastReps: [6, 10], category: 'C' },
+            { name: "Kettlebell Snatch (per side)", reps: [8, 12], fastReps: [5, 8], category: 'C' }, 
+            { name: "Kettlebell Renegade Rows (per side)", reps: [10, 15], fastReps: [4, 8], category: 'U' }, 
+            { name: "Kettlebell Deadlifts", reps: [15, 25], fastReps: [12, 20], category: 'L' },
         ];
 
         const BW_MOVEMENTS = [
-            { name: "Air Squats", reps: [20, 30], fastReps: [15, 20] },
-            { name: "Push-ups", reps: [10, 15], fastReps: [8, 12] },
-            { name: "Burpees", reps: [5, 10], fastReps: [4, 8] },
-            { name: "Jumping Jacks", reps: [30, 50], fastReps: [20, 40] },
-            { name: "V-Ups / Crunches", reps: [15, 25], fastReps: [12, 20] },
-            { name: "Plank Hold (seconds)", reps: [30, 60], fastReps: [20, 45] },
+            { name: "Air Squats", reps: [20, 30], fastReps: [15, 20], category: 'L' },
+            { name: "Push-ups (Standard)", reps: [10, 20], fastReps: [8, 12], category: 'U' }, 
+            { name: "Burpees", reps: [5, 12], fastReps: [4, 10], category: 'C' },
+            { name: "Walking Lunges (per leg)", reps: [10, 15], fastReps: [6, 10], category: 'L' }, 
+            { name: "V-Ups / Sit-ups", reps: [15, 25], fastReps: [12, 20], category: 'C' },
+            { name: "Mountain Climbers (per leg)", reps: [20, 30], fastReps: [15, 25], category: 'C' },
+            { name: "Plank Hold (seconds)", reps: [30, 60], fastReps: [20, 45], category: 'C' },
         ];
         
-        const WOD_FORMATS = ["AMRAP", "EMOM", "FOR TIME", "CHIPPER", "TABATA"];
+        const WOD_FORMATS = ["AMRAP", "EMOM", "FOR TIME", "CHIPPER", "LADDER 10-1", "LADDER 20-2", "TABATA", "INTERVAL_30_30", "INTERVAL_60_30", "INTERVAL_90_30"];
+        
+        // --- WOD PURPOSE MAPPING ---
+        const WOD_PURPOSE_MAP = {
+            "AMRAP": "High-Volume Full-Body Stamina. Test your sustained intensity.",
+            "FOR TIME": "Structured Strength-Endurance. Aim for consistent round times.",
+            "CHIPPER": "Mental Toughness & Grinding Capacity. Break large sets early.",
+            "LADDER 10-1": "Low-Volume Power Endurance. Max effort, minimal rest.",
+            "LADDER 20-2": "High-Volume Unilateral Stamina. Manage fatigue through large rep drops.",
+            "EMOM": "Consistency & Pacing Drill. Maximize efficiency to earn rest.",
+            "TABATA": "Anaerobic Power & Conditioning. Maintain max effort output.",
+            "INTERVAL_30_30": "High-Intensity Interval Training (HIIT). Equal work/rest ratio.",
+            "INTERVAL_60_30": "Aerobic Power Intervals. Test your sustained output under fatigue.",
+            "INTERVAL_90_30": "Long Duration Sustained Power. Focus on internal pacing cues.",
+        };
+        
+        // --- CONCISE COACHING NOTES ---
+        const SCALING_NOTE_REP_ROUND_CONCISE = "Reduce reps/choose easier variation to maintain movement quality if pace drops off.";
+        const SCALING_NOTE_EMOM_CONCISE = "If work takes >45s, immediately reduce reps/scale movement to ensure rest time is earned.";
+        const SCALING_NOTE_INTERVAL_CONCISE = "Use lower-impact variation to maintain intensity for the full work period.";
+        const UNILATERAL_NOTE_EMOM = "*UNI: Alt sides/legs during the minute.";
+        const UNILATERAL_NOTE_REP_ROUND = "*UNI: Total reps listed. Alt sides/legs.";
+        const UNILATERAL_NOTE_INTERVAL = "*UNI: Alt sides/legs during work period.";
 
-        function getMovements(equipment, count) {
-            let availableMoves = [];
-            if (equipment === 'kettlebell') {
-                availableMoves = KB_MOVEMENTS;
-            } else if (equipment === 'bodyweight') {
-                availableMoves = BW_MOVEMENTS;
-            } else { // combined
-                availableMoves = [...KB_MOVEMENTS, ...BW_MOVEMENTS];
+        const PACING_NOTE = {};
+        PACING_NOTE.AMRAP = "Find a sustainable pace for the full duration. Avoid burning out in the first 5 mins.";
+        PACING_NOTE.FORTIME = "Aim for quick, consistent rounds. Break movements early to avoid hitting a wall.";
+        PACING_NOTE.CHIPPER = "Break large numbers into small sets (5-10 reps) early. Prioritize form over speed.";
+        PACING_NOTE.LADDER = "Treat high-rep rounds (start) like a FOR TIME piece. The decrease in volume offers a psychological win later.";
+        PACING_NOTE.EMOM = "Complete work in 35-45s max to earn rest. Consistency is key.";
+        PACING_NOTE.TABATA = "Maximal effort. Maintain intensity and minimize rep drop-off across the 8 rounds.";
+        PACING_NOTE.INTERVAL_30_30 = "Push hard for 30s. Use the 30s rest for full recovery to maintain quality across all blocks.";
+        PACING_NOTE.INTERVAL_60_30 = "1:2 rest/work ratio is challenging. Break the movement up intelligently to avoid burning out early.";
+        PACING_NOTE.INTERVAL_90_30 = "High-demand work. Find a steady, sustainable pace that ensures good form for the full 90 seconds.";
+
+
+        /**
+         * Calculates a logical, rounded rep count based on the movement type and required range.
+         */
+        const getLogicalReps = (movementName, min, max, isChipper = false) => {
+            if (movementName.includes("Plank Hold")) {
+                let reps = isChipper ? randInt(40, 65) : randInt(min, max);
+                return Math.max(15, Math.round(reps / 15) * 15);
             }
             
-            // Randomly select unique movements
-            const selected = [];
-            const movesCopy = [...availableMoves];
-            for (let i = 0; i < count && movesCopy.length > 0; i++) {
-                const index = randInt(0, movesCopy.length - 1);
-                selected.push(movesCopy.splice(index, 1)[0]);
+            let reps = randInt(min, max);
+            let roundingFactor = 5; 
+
+            if (movementName.includes("Clean & Press") || movementName.includes("Thrusters") || 
+                movementName.includes("Snatch") || movementName.includes("Burpees") ||
+                movementName.includes("Push-ups") || movementName.includes("Lunges") ||
+                movementName.includes("Renegade Rows")) {
+                roundingFactor = 2;
             }
-            return selected;
+            
+            let finalReps = Math.round(reps / roundingFactor) * roundingFactor;
+
+            if (finalReps < min) {
+                finalReps = Math.ceil(min / roundingFactor) * roundingFactor;
+            } else if (finalReps > max) {
+                finalReps = Math.floor(max / roundingFactor) * roundingFactor;
+            }
+
+            return Math.max(1, finalReps);
+        };
+
+        /**
+         * Selects a specified number of unique movements.
+         */
+        function getMovements(equipment, count, filterTimeBased = false) {
+            let allMoves = [];
+            
+            const bwFiltered = BW_MOVEMENTS.filter(m => !filterTimeBased || !m.name.includes("Plank Hold"));
+
+            if (equipment === 'kettlebell') {
+                allMoves = [...KB_MOVEMENTS];
+            } else if (equipment === 'bodyweight') {
+                allMoves = [...bwFiltered];
+            } else { // combined
+                allMoves = [...KB_MOVEMENTS, ...bwFiltered];
+            }
+            
+            let lowerMoves = allMoves.filter(m => m.category === 'L');
+            let upperMoves = allMoves.filter(m => m.category === 'U');
+            let coreCardioMoves = allMoves.filter(m => m.category === 'C');
+            
+            let selectedMoves = [];
+            let neededCount = count;
+
+            // Enforce balance (1 Lower, 1 Upper)
+            if (lowerMoves.length > 0) {
+                const move = randItem(lowerMoves);
+                selectedMoves.push(move);
+                lowerMoves = lowerMoves.filter(m => m !== move);
+                neededCount--;
+            }
+
+            if (upperMoves.length > 0 && neededCount > 0) {
+                const move = randItem(upperMoves);
+                selectedMoves.push(move);
+                upperMoves = upperMoves.filter(m => m !== move);
+                neededCount--;
+            }
+
+            // Fill remaining slots
+            let remainingPool = [...lowerMoves, ...upperMoves, ...coreCardioMoves];
+            
+            // Shuffle
+            for (let i = remainingPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [remainingPool[i], remainingPool[j]] = [remainingPool[j], remainingPool[i]];
+            }
+
+            selectedMoves = [...selectedMoves, ...remainingPool.slice(0, neededCount)];
+
+            // Final shuffle for order
+            for (let i = selectedMoves.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [selectedMoves[i], selectedMoves[j]] = [selectedMoves[j], selectedMoves[i]];
+            }
+            
+            return selectedMoves;
         }
 
+        /**
+         * Selects movements specifically for ladder formats.
+         */
+        function getLadderMovements(equipment, count, isHighVolumeUnilateral) {
+            let allMoves = [...KB_MOVEMENTS, ...BW_MOVEMENTS].filter(m => !m.name.includes("Plank Hold"));
+                
+            if (equipment === 'kettlebell') {
+                allMoves = allMoves.filter(m => KB_MOVEMENTS.includes(m));
+            } else if (equipment === 'bodyweight') {
+                allMoves = allMoves.filter(m => BW_MOVEMENTS.includes(m));
+            }
+            
+            let selectedMoves = [];
+            
+            if (isHighVolumeUnilateral) { 
+                const unilateralPool = allMoves.filter(isUnilateral);
+                if (unilateralPool.length === 0) throw new Error("Ladder 20-2 requires equipment with unilateral movements.");
+                const mandatoryUni = randItem(unilateralPool);
+                selectedMoves.push(mandatoryUni);
+                let remainingPool = allMoves.filter(m => m !== mandatoryUni);
+                let remainingNeeded = Math.min(Math.max(0, count - 1), remainingPool.length);
+                for (let i = remainingPool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [remainingPool[i], remainingPool[j]] = [remainingPool[j], remainingPool[i]];
+                }
+                selectedMoves = [...selectedMoves, ...remainingPool.slice(0, remainingNeeded)];
+
+            } else { 
+                const bilateralPool = allMoves.filter(m => !isUnilateral(m));
+                if (bilateralPool.length < count) throw new Error("Ladder 10-1 requires equipment with enough bilateral movements.");
+                let pool = [...bilateralPool];
+                for (let i = pool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pool[i], pool[j]] = [pool[j], pool[i]]; 
+                }
+                selectedMoves = pool.slice(0, count);
+            }
+            
+            for (let i = selectedMoves.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [selectedMoves[i], selectedMoves[j]] = [selectedMoves[j], selectedMoves[i]];
+            }
+
+            if (selectedMoves.length < 2) {
+                 throw new Error("Could not select a minimum of 2 movements for the ladder format.");
+            }
+            
+            return selectedMoves;
+        }
+
+        /**
+         * Generates and displays the Workout of the Day based on form inputs.
+         */
         function generateWOD() {
             const equipment = document.getElementById('wod-equipment').value;
             let format = document.getElementById('wod-format').value;
             const resultDiv = document.getElementById('wod-result');
             const formDiv = document.getElementById('wod-input-form');
             const formatDisplay = document.getElementById('wod-format-display');
+            const purposeDisplay = document.getElementById('wod-purpose-display');
             const goalDisplay = document.getElementById('wod-goal-display');
             const instructionsDiv = document.getElementById('wod-instructions');
 
-            // --- Select Format ---
             if (format === 'random') {
-                format = randItem(WOD_FORMATS);
+                const nonSpecializedFormats = WOD_FORMATS.filter(f => !f.startsWith("LADDER") && !f.startsWith("INTERVAL") && f !== "TABATA");
+                format = randItem(nonSpecializedFormats);
             }
+            
+            const baseFormatKey = format.replace("LADDER 10-1", "LADDER 10-1").replace("LADDER 20-2", "LADDER 20-2");
+            let purposeText = WOD_PURPOSE_MAP[baseFormatKey] || "General conditioning workout.";
 
-            // --- Generate WOD based on format ---
             let goalText = '';
             let instructionsHtml = '';
+            let instructionsText = ''; 
             let movements;
+            let needsUnilateralNote = false; 
+            let timeCap;
+            let pacingNoteConcise = '';
+            let scalingNoteConcise = '';
 
             try {
                 switch (format) {
                     case "AMRAP":
-                        const amrapTime = randItem([15, 18, 20]);
-                        movements = getMovements(equipment, randInt(3, 4));
-                        goalText = `${amrapTime} Minute AMRAP (As Many Rounds As Possible)`;
+                    case "FOR TIME":
+                    case "CHIPPER":
+                    case "LADDER 10-1":
+                    case "LADDER 20-2":
                         
-                        instructionsHtml = movements.map(m => {
-                            const reps = randInt(m.reps[0], m.reps[1]);
-                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${reps} x ${m.name}</div>`;
-                        }).join('');
-                        instructionsHtml += `<p class="mt-4 text-sm text-gray-400">Rest only as needed to maintain high intensity.</p>`;
+                        if (format.startsWith("LADDER")) {
+                            const repInterval = format === "LADDER 10-1" ? 1 : 2;
+                            const ladderStart = format === "LADDER 10-1" ? 10 : 20;
+                            const isHighVolumeUnilateral = format === "LADDER 20-2";
+                            const targetCount = isHighVolumeUnilateral ? randInt(2, 3) : randInt(3, 4);
+                            movements = getLadderMovements(equipment, targetCount, isHighVolumeUnilateral);
+                            timeCap = format === "LADDER 10-1" ? randItem([12, 15]) : randItem([18, 22]);
+                        } else {
+                            timeCap = randItem([12, 15, 18, 20]);
+                            movements = getMovements(equipment, randInt(2, format === "FOR TIME" ? 5 : 4), false);
+                        }
+
+                        if (format === "AMRAP") pacingNoteConcise = PACING_NOTE.AMRAP;
+                        else if (format === "FOR TIME") pacingNoteConcise = PACING_NOTE.FORTIME;
+                        else if (format === "CHIPPER") pacingNoteConcise = PACING_NOTE.CHIPPER;
+                        else if (format.startsWith("LADDER")) pacingNoteConcise = PACING_NOTE.LADDER;
+                        scalingNoteConcise = SCALING_NOTE_REP_ROUND_CONCISE;
+
+                        const processedMovesRepBased = movements.map((m, i) => {
+                            let finalReps;
+                            let name = m.name;
+                            let movementIsUnilateral = isUnilateral(m);
+
+                            let repRange = m.reps;
+                            finalReps = getLogicalReps(name, repRange[0], repRange[1], format === "CHIPPER");
+                            
+                            if (format === "CHIPPER" && !name.includes("Plank Hold")) {
+                                const repStart = randItem([100, 80, 60]);
+                                const repFactor = (i / movements.length) * 0.4; 
+                                let reps = repStart - Math.round(repStart * repFactor);
+                                finalReps = Math.max(10, Math.round(reps / 5) * 5); 
+                            }
+
+                            if (movementIsUnilateral && !name.includes("Plank Hold")) {
+                                finalReps *= 2;
+                                name = name.replace(' (per side)', '').replace(' (per leg)', '') + GREEN_ASTERISK;
+                            }
+                            
+                            const textName = name.replace(GREEN_ASTERISK, ''); 
+                            return { movement: m, name, finalReps, textName };
+                        });
+                        
+                        let instructionsHtmlBody = processedMovesRepBased.map(m => {
+                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${m.finalReps} x ${m.name}</div>`;
+                        }).join('\n');
+                        
+                        instructionsText = processedMovesRepBased.map(m => {
+                            if (isUnilateral(m.movement)) needsUnilateralNote = true; 
+                            return `${m.finalReps} ${m.textName}`;
+                        }).join('\n');
+
+                        let headerLine;
+                        let secondaryInstruction = '';
+
+                        if (format === "AMRAP") {
+                            goalText = `AMRAP (As Many Rounds As Possible) - Time Cap: ${timeCap} Minutes`;
+                            headerLine = `AMRAP ${timeCap} Min`;
+                            secondaryInstruction = `Perform the following circuit, cycling through the movements in order until the time cap is reached.`;
+                            
+                            instructionsHtml = instructionsHtmlBody;
+                            instructionsHtml += `<p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">${secondaryInstruction} Focus on movement quality while maintaining high intensity.</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+
+                        } else if (format === "FOR TIME") {
+                            const numRounds = randItem([4, 5, 6]);
+                            goalText = `FOR TIME: ${numRounds} Rounds (Time Cap: ${timeCap} Minutes)`;
+                            headerLine = `FT ${numRounds} Rds | TC ${timeCap} Min`;
+                            secondaryInstruction = `Complete ${numRounds} Rounds of the sequence below. Record your total time.`;
+
+                            instructionsHtml = `<p class="font-bold text-xl mb-3">Complete ${numRounds} Rounds of:</p><div class="space-y-2">${instructionsHtmlBody}</div><p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">${secondaryInstruction} Break reps as needed. Maintain structural integrity.</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+                            
+                        } else if (format === "CHIPPER") {
+                            goalText = `CHIPPER: For Time (Time Cap: ${timeCap} Minutes)`; 
+                            headerLine = `CHIPPER | TC ${timeCap} Min`;
+                            secondaryInstruction = `Complete all movements in the order listed. Reps must be completed before moving to the next exercise.`;
+
+                            instructionsHtml = `<p class="font-bold text-xl mb-3">Complete all movements in the order listed:</p><div class="space-y-2">${instructionsHtmlBody}</div><p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">${secondaryInstruction} If you hit the cap, record your total reps completed.</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+                            
+                        } else { // LADDERS
+                            const repInterval = format === "LADDER 10-1" ? 1 : 2;
+                            const ladderStart = format === "LADDER 10-1" ? 10 : 20;
+                            const roundsArray = Array.from({ length: ladderStart / repInterval }, (_, i) => ({
+                                repCount: ladderStart - (i * repInterval),
+                                roundIndex: i + 1
+                            })); 
+                            
+                            goalText = `FOR TIME: Descending Ladder ${ladderStart}-${repInterval} (Time Cap: ${timeCap} Minutes)`;
+                            headerLine = `LADDER ${ladderStart}-${repInterval} | TC ${timeCap} Min`;
+                            secondaryInstruction = `Complete the following rounds in order, descending from ${ladderStart} to ${repInterval}.`;
+
+                            instructionsText = roundsArray.map(round => {
+                                const repCount = round.repCount;
+                                const movesTextList = processedMovesRepBased.map(m => {
+                                    if (isUnilateral(m.movement)) needsUnilateralNote = true;
+                                    return m.textName;
+                                }).join(' / ');
+                                return `R${round.roundIndex} (${repCount} reps): ${movesTextList}`;
+                            }).join('\n');
+
+                            let roundsHtml = roundsArray.map(round => {
+                                const repCount = round.repCount;
+                                const roundIndex = round.roundIndex;
+                                const movesList = processedMovesRepBased.map(m => {
+                                    return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${repCount} x ${m.name}</div>`;
+                                }).join('');
+                                return `<div class="p-4 bg-gray-800 rounded-lg space-y-2"><h4 class="font-bold text-xl mb-1 text-white tracking-wider font-brand">ROUND ${roundIndex} (REPS: ${repCount})</h4><div class="space-y-1">${movesList}</div></div>`;
+                            }).join('');
+                            
+                            instructionsHtml = `<p class="font-bold text-xl mb-3">${secondaryInstruction} You must complete all movements in a round before decreasing reps for the next round:</p><div class="space-y-3">${roundsHtml}</div><p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">Record your total time to completion. If you hit the cap, record the round/reps completed.</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+                        }
+                        
+                        currentWODText = `WOD | ${headerLine}\nPURPOSE: ${purposeText}\n\n${secondaryInstruction}\n\n${instructionsText}\n\n--- COACHING NOTES ---\nPACING: ${pacingNoteConcise}\nSCALING: ${scalingNoteConcise}`;
+
+                        if (needsUnilateralNote) {
+                            currentWODText += `\n\n${UNILATERAL_NOTE_REP_ROUND}`;
+                            instructionsHtml += `<p class="mt-4 text-sm text-green-400 font-bold">UNILATERAL KEY ${GREEN_ASTERISK}: For movements marked with an asterisk, the reps listed are the TOTAL count (e.g., 20 reps = 10 per side/leg). Alternate sides as needed.</p>`;
+                        }
+
                         break;
 
                     case "EMOM":
-                        const emomTime = randItem([16, 20, 24]);
-                        movements = getMovements(equipment, randInt(2, 3));
-                        goalText = `${emomTime} Minute EMOM (Every Minute On the Minute)`;
+                        movements = getMovements(equipment, randInt(2, 4), false);
+                        timeCap = randItem([16, 20, 24]);
+                        goalText = `${timeCap} Minute EMOM (Every Minute On the Minute) - Time Cap: ${timeCap} Minutes`;
 
-                        instructionsHtml = movements.map((m, i) => {
-                            // Use fastReps for EMOM to ensure time for rest
-                            const reps = randInt(m.fastReps[0], m.fastReps[1]);
-                            const minute = (i % movements.length) + 1;
-                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">Minute ${minute}: ${reps} x ${m.name}</div>`;
-                        }).join('');
-                        instructionsHtml += `<p class="mt-4 text-sm text-gray-400">Perform the designated movement in the minute. Rest for the remainder of the minute before the next task begins. Repeat this pattern for the full ${emomTime} minutes.</p>`;
-                        break;
+                        pacingNoteConcise = PACING_NOTE.EMOM;
+                        scalingNoteConcise = SCALING_NOTE_EMOM_CONCISE;
 
-                    case "FOR TIME":
-                        const numRounds = randItem([4, 5, 6]);
-                        movements = getMovements(equipment, randInt(3, 5));
-                        goalText = `FOR TIME: ${numRounds} Rounds`;
+                        const processedMovesEmom = movements.map((m, i) => {
+                            let finalReps = getLogicalReps(m.name, m.fastReps[0], m.fastReps[1], false);
+                            let name = m.name;
+                            if (isUnilateral(m) && !name.includes("Plank Hold")) {
+                                needsUnilateralNote = true;
+                                finalReps *= 2;
+                                name = name.replace(' (per side)', '').replace(' (per leg)', '') + GREEN_ASTERISK;
+                            }
+                            const textName = name.replace(GREEN_ASTERISK, ''); 
+                            const minuteType = (movements.length > 1) ? `Minute ${(i % movements.length) + 1}` : 'Every Minute';
+                            return { movement: m, name, finalReps, minuteType, textName };
+                        });
 
-                        instructionsHtml = movements.map(m => {
-                            const reps = randInt(m.reps[0], m.reps[1]);
-                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${reps} x ${m.name}</div>`;
-                        }).join('');
-                        instructionsHtml = `
-                            <p class="font-bold text-xl mb-3">Complete ${numRounds} Rounds of:</p>
-                            <div class="space-y-2">${instructionsHtml}</div>
-                            <p class="mt-4 text-sm text-gray-400">Record your total time to completion. Target Time: 18-25 minutes.</p>
-                        `;
-                        break;
+                        instructionsText = processedMovesEmom.map(m => {
+                            if (isUnilateral(m.movement)) needsUnilateralNote = true;
+                            return `${m.minuteType.replace('Minute ', 'M')}: ${m.finalReps} ${m.textName}`;
+                        }).join('\n');
                         
-                    case "CHIPPER":
-                        const initialRep = randItem([100, 80, 60]);
-                        movements = getMovements(equipment, randInt(4, 5));
-                        goalText = `CHIPPER: For Time`;
+                        const secondaryInstructionEMOM = `Perform the work in the minute. Rest for the remainder of the minute. Repeat for ${timeCap} minutes.`;
+                        currentWODText = `WOD | EMOM ${timeCap} Min\nPURPOSE: ${purposeText}\n\n${secondaryInstructionEMOM}\n\n${instructionsText}\n\n--- COACHING NOTES ---\nPACING: ${pacingNoteConcise}\nSCALING: ${scalingNoteConcise}`;
 
-                        instructionsHtml = movements.map((m, i) => {
-                            const reps = initialRep - (i * (initialRep / movements.length))
-                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${Math.round(reps / 10) * 10} x ${m.name}</div>`;
+                        if (needsUnilateralNote) {
+                            currentWODText += `\n\n${UNILATERAL_NOTE_EMOM}`;
+                        }
+
+                        instructionsHtml = processedMovesEmom.map(m => {
+                            return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${m.minuteType}: ${m.finalReps} x ${m.name}</div>`;
                         }).join('');
-                        instructionsHtml = `
-                            <p class="font-bold text-xl mb-3">Complete all reps in order. Break up reps as needed:</p>
-                            <div class="space-y-2">${instructionsHtml}</div>
-                            <p class="mt-4 text-sm text-gray-400">Complete as quickly as possible. Time Cap: 30 minutes.</p>
-                        `;
+                        instructionsHtml += `<p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">${secondaryInstructionEMOM}</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+
+                        if (needsUnilateralNote) {
+                            instructionsHtml += `<p class="mt-4 text-sm text-green-400 font-bold">UNILATERAL KEY ${GREEN_ASTERISK}: For movements marked with an asterisk, alternate sides during the work block.</p>`;
+                        }
                         break;
-                        
+
                     case "TABATA":
-                        const numIntervals = randItem([3, 4]);
-                        movements = getMovements(equipment, numIntervals);
-                        goalText = `Timed Interval Workout`;
+                    case "INTERVAL_30_30":
+                    case "INTERVAL_60_30":
+                    case "INTERVAL_90_30":
+                        let workTime, restTime, numRoundsPerBlock, totalBlocks, description, formatLabel, conciseFormatLabel, intervalFormatKey;
+                        
+                        switch (format) {
+                            case "TABATA": workTime = 20; restTime = 10; numRoundsPerBlock = 8; totalBlocks = randItem([3, 4]); formatLabel = "TABATA (20s/10s)"; conciseFormatLabel = "TABATA"; description = "8 rounds of 20 seconds maximal effort work / 10 seconds rest."; intervalFormatKey = "TABATA"; break;
+                            case "INTERVAL_30_30": workTime = 30; restTime = 30; numRoundsPerBlock = randItem([5, 6]); totalBlocks = randItem([2, 3]); formatLabel = "30/30 INTERVALS (30s/30s)"; conciseFormatLabel = "30/30 Int"; description = `${numRoundsPerBlock} rounds of 30 seconds work / 30 seconds rest.`; intervalFormatKey = "INTERVAL_30_30"; break;
+                            case "INTERVAL_60_30": workTime = 60; restTime = 30; numRoundsPerBlock = randItem([4, 5]); totalBlocks = randItem([2, 3]); formatLabel = "60/30 INTERVALS (60s/30s)"; conciseFormatLabel = "60/30 Int"; description = `${numRoundsPerBlock} rounds of 60 seconds work / 30 seconds rest.`; intervalFormatKey = "INTERVAL_60_30"; break;
+                            case "INTERVAL_90_30": workTime = 90; restTime = 30; numRoundsPerBlock = randItem([3, 4]); totalBlocks = randItem([2, 3]); formatLabel = "90/30 INTERVALS (90s/30s)"; conciseFormatLabel = "90/30 Int"; description = `${numRoundsPerBlock} rounds of 90 seconds work / 30 seconds rest.`; intervalFormatKey = "INTERVAL_90_30"; break;
+                        }
+                        
+                        pacingNoteConcise = PACING_NOTE[intervalFormatKey];
+                        scalingNoteConcise = SCALING_NOTE_INTERVAL_CONCISE;
 
-                        instructionsHtml = movements.map((m, i) => {
-                            return `
-                                <div class="p-2 bg-gray-900 rounded-md">
-                                    <p class="font-mono text-lg font-bold">INTERVAL ${i + 1}: ${m.name}</p>
-                                    <p class="text-sm">8 Rounds of 20 seconds work / 10 seconds rest.</p>
-                                </div>
-                            `;
-                        }).join('');
-                        instructionsHtml = `
-                            <p class="font-bold text-xl mb-3">Total Time: ${numIntervals * 4} Minutes (plus transition time between intervals).</p>
-                            <div class="space-y-2">${instructionsHtml}</div>
-                            <p class="mt-4 text-sm text-gray-400">Use the built-in Interval Timer on the main screen to track work and rest periods.</p>
-                        `;
+                        const blockTime = numRoundsPerBlock * (workTime + restTime) / 60;
+                        timeCap = Math.ceil(blockTime * totalBlocks) + totalBlocks * randInt(1, 2);
+
+                        let movesPerBlock = (format === "TABATA" || format === "INTERVAL_30_30") ? (totalBlocks === 2 ? 2 : 1) : 1;
+                        
+                        movements = getMovements(equipment, movesPerBlock * totalBlocks, false); 
+
+                        let intervalBodyText = '';
+                        let blockInstructions = '';
+
+                        for (let i = 0; i < totalBlocks; i++) {
+                            const movesInBlock = movements.slice(i * movesPerBlock, (i + 1) * movesPerBlock);
+                            
+                            let blockMovementsHtml = movesInBlock.map(m => {
+                                let name = m.name;
+                                if (isUnilateral(m)) {
+                                    name = name.replace(' (per side)', '').replace(' (per leg)', '') + GREEN_ASTERISK;
+                                    needsUnilateralNote = true;
+                                }
+                                return `<div class="p-2 bg-gray-900 rounded-md font-mono text-lg">${name}</div>`;
+                            }).join('');
+                            
+                            let blockMovementsText = movesInBlock.map(m => {
+                                let name = m.name;
+                                if (isUnilateral(m)) {
+                                    needsUnilateralNote = true;
+                                    name = name.replace(' (per side)', '').replace(' (per leg)', '');
+                                }
+                                return name;
+                            }).join(' & ');
+
+                            intervalBodyText += `Block ${i + 1}: ${blockMovementsText}\n`;
+
+                            blockInstructions += `<div class="p-4 bg-gray-800 rounded-lg space-y-2"><h4 class="font-bold text-xl mb-1 text-white tracking-wider font-brand">BLOCK ${i + 1}</h4><p class="text-sm text-gray-300 mb-2">${description}</p><p class="font-mono text-lg font-bold uppercase text-gray-400">Movement(s) to Perform:</p><div class="space-y-1">${blockMovementsHtml}</div></div>`;
+                        }
+
+                        goalText = `INTERVAL WORKOUT (${formatLabel}) - Total Time: Approx ${timeCap} Minutes`;
+                        
+                        const totalRounds = totalBlocks * numRoundsPerBlock;
+                        const conciseHeader = format === "TABATA" ? `TABATA ${totalRounds} Rds | ${totalBlocks} Blks` : `${conciseFormatLabel} ${numRoundsPerBlock} Rds x ${totalBlocks} Blks | ${workTime}s/${restTime}s`;
+                        const secondaryInstructionInterval = `Complete all blocks in order. Rest 1-2 minutes completely between blocks.`;
+
+                        currentWODText = `WOD | ${conciseHeader}\nPURPOSE: ${purposeText}\n\n${secondaryInstructionInterval}\n\n${intervalBodyText.trim()}\n\n--- COACHING NOTES ---\nPACING: ${pacingNoteConcise}\nSCALING: ${scalingNoteConcise}`;
+
+                        if (needsUnilateralNote) {
+                            currentWODText += `\n\n${UNILATERAL_NOTE_INTERVAL}`;
+                        }
+
+                        instructionsHtml = `<p class="font-bold text-xl mb-3">${secondaryInstructionInterval}</p><div class="space-y-3">${blockInstructions}</div><p class="mt-4 text-sm text-yellow-400 font-bold">Pacing Notes: ${pacingNoteConcise}</p><p class="mt-2 text-sm text-gray-400">Use an external interval timer. Record the total number of reps completed for each block/movement (if applicable).</p><p class="mt-4 text-sm text-blue-400 font-bold">Scaling Notes: ${scalingNoteConcise}</p>`;
+
+                        if (needsUnilateralNote) {
+                            instructionsHtml += `<p class="mt-4 text-sm text-green-400 font-bold">UNILATERAL KEY ${GREEN_ASTERISK}: For movements marked with an asterisk, alternate sides during the ${workTime}-second work period.</p>`;
+                        }
+
                         break;
 
                     default:
                         throw new Error("Invalid format.");
                 }
             } catch(e) {
+                console.error("WOD Generation Error:", e);
+                document.getElementById('wod-error').textContent = `WOD Generation Error: ${e.message}. Please try a different selection.`;
                 document.getElementById('wod-error').classList.remove('hidden');
                 return;
             }
             
             // --- Update UI ---
-            formatDisplay.textContent = format;
+            const displayedFormat = format.replace('LADDER 10-1', 'LADDER 10-1').replace('LADDER 20-2', 'LADDER 20-2').replace('INTERVAL_', '').replace('_', '/').replace('TABATA', 'TABATA');
+            
+            purposeDisplay.textContent = purposeText;
+            formatDisplay.textContent = displayedFormat;
             goalDisplay.textContent = goalText;
             instructionsDiv.innerHTML = instructionsHtml;
 
@@ -776,690 +854,26 @@
             resultDiv.classList.remove('hidden');
         }
         
+        /**
+         * Resets the UI to show the input form and updates the footer year.
+         */
         function resetWOD() {
-            // Simply hide results and show form for WOD, as inputs are selects and don't need clearing.
             document.getElementById('wod-result').classList.add('hidden'); 
             document.getElementById('wod-input-form').classList.remove('hidden');
             document.getElementById('wod-error').classList.add('hidden');
+            currentWODText = "";
         }
 
-
-        // --- 2. 1RM Calculator Logic ---
-        function generateTrainingZoneTable(oneRM, unit) {
-            const zones = [
-                { percent: 100, goal: "Max Effort / Testing" },
-                { percent: 95, goal: "Peak Strength (1-2 Reps)" },
-                { percent: 90, goal: "Heavy Strength (2-4 Reps)" },
-                { percent: 85, goal: "Strength / Power (4-6 Reps)" },
-                { percent: 80, goal: "Hypertrophy (6-8 Reps)" },
-                { percent: 75, goal: "Hypertrophy (8-10 Reps)" },
-                { percent: 70, goal: "Endurance / Hypertrophy (10-12 Reps)" },
-                { percent: 65, goal: "Muscular Endurance" },
-                { percent: 60, goal: "Conditioning / Warm-up" }
-            ];
-
-            let html = `
-                <h3 class="text-xl font-bold uppercase tracking-wider mb-2 mt-6">Training Zones (Weight Targets)</h3>
-                <p class="text-sm text-gray-400 mb-4">Use these percentages of your 1RM for programming:</p>
-                <div class="overflow-x-auto rounded-lg border border-gray-700">
-                    <table class="min-w-full divide-y divide-gray-700">
-                        <thead>
-                            <tr class="bg-gray-800 text-left text-xs font-semibold uppercase tracking-wider">
-                                <th class="p-3">Zone (%)</th>
-                                <th class="p-3">Weight (${unit})</th>
-                                <th class="p-3">Primary Goal</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-700">
-            `;
-
-            zones.forEach((zone, index) => {
-                const weight = oneRM * (zone.percent / 100);
-                const bgColor = index % 2 === 0 ? 'bg-gray-900' : 'bg-gray-950';
-
-                html += `
-                    <tr class="${bgColor}">
-                        <td class="p-3 text-lg font-bold">${zone.percent}%</td>
-                        <td class="p-3 text-lg font-bold">${weight.toFixed(1)}</td>
-                        <td class="p-3 text-sm">${zone.goal}</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            return html;
-        }
-        
-        function calculateOneRM() {
-            const weight = parseFloat(document.getElementById('one-rm-weight').value);
-            const reps = parseInt(document.getElementById('one-rm-reps').value, 10);
-            const unit = document.getElementById('one-rm-unit').value;
-            const resultDiv = document.getElementById('one-rm-result');
-            const zonesDiv = document.getElementById('one-rm-zones');
-            const errorDiv = document.getElementById('one-rm-error');
-            const formDiv = document.getElementById('one-rm-input-form');
-
-
-            resultDiv.classList.add('hidden');
-            errorDiv.classList.add('hidden');
-
-            if (isNaN(weight) || isNaN(reps) || weight <= 0 || reps < 1 || reps > 10) {
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Epley Formula: 1RM = Weight * (1 + (Reps / 30))
-            const oneRM = weight * (1 + (reps / 30));
-
-            document.getElementById('result-weight').textContent = oneRM.toFixed(1);
-            document.getElementById('result-unit').textContent = unit;
-            
-            // Generate and display training zones table
-            zonesDiv.innerHTML = generateTrainingZoneTable(oneRM, unit);
-            
-            formDiv.classList.add('hidden');
-            resultDiv.classList.remove('hidden');
-        }
-
-        function resetOneRM() {
-            document.getElementById('one-rm-weight').value = '';
-            document.getElementById('one-rm-reps').value = '';
-            document.getElementById('one-rm-result').classList.add('hidden');
-            document.getElementById('one-rm-input-form').classList.remove('hidden');
-            document.getElementById('one-rm-error').classList.add('hidden');
-            document.getElementById('one-rm-zones').innerHTML = '';
-        }
-
-
-        // --- 3. Calorie and Macro Calculator Logic ---
-        const PROTEIN_CAL_PER_G = 4;
-        const CARB_CAL_PER_G = 4;
-        const FAT_CAL_PER_G = 9;
-        const MACRO_SPLIT = { protein: 0.40, carbs: 0.30, fat: 0.30 };
-
-        function toggleMacroUnits() {
-            const unitSystem = document.getElementById('macro-unit-system').value;
-            const isImperial = unitSystem === 'imperial';
-
-            document.getElementById('macro-weight-label').textContent = isImperial ? 'Weight (lb)' : 'Weight (kg)';
-            
-            const cmGroup = document.getElementById('macro-height-cm-group');
-            const ftInGroup = document.getElementById('macro-height-ftin-group');
-
-            if (isImperial) {
-                cmGroup.classList.add('hidden');
-                ftInGroup.classList.remove('hidden');
-                document.getElementById('macro-weight').min = 60; // Min weight 60 lb
-                document.getElementById('macro-weight').max = 660; // Max weight 660 lb
-                document.getElementById('macro-weight').placeholder = 'e.g., 165';
-            } else {
-                cmGroup.classList.remove('hidden');
-                ftInGroup.classList.add('hidden');
-                document.getElementById('macro-weight').min = 30; // Min weight 30 kg
-                document.getElementById('macro-weight').max = 300; // Max weight 300 kg
-                document.getElementById('macro-weight').placeholder = 'e.g., 75';
-            }
-        }
-
-        function calculateMacros() {
-            const unitSystem = document.getElementById('macro-unit-system').value;
-            const isImperial = unitSystem === 'imperial';
-            
-            const gender = document.getElementById('macro-gender').value;
-            const age = parseInt(document.getElementById('macro-age').value, 10);
-            const weightInput = parseFloat(document.getElementById('macro-weight').value);
-            const activityMultiplier = parseFloat(document.getElementById('macro-activity').value);
-
-            let heightCm;
-            if (isImperial) {
-                const ft = parseFloat(document.getElementById('macro-height-ft').value) || 0;
-                const inches = parseFloat(document.getElementById('macro-height-in').value) || 0;
-                // Convert feet and inches to total inches, then to cm
-                const totalInches = (ft * 12) + inches;
-                heightCm = totalInches * IN_TO_CM;
-            } else {
-                // FIX APPLIED: Ensure metric height is also validated, using || 0 for robustness
-                heightCm = parseFloat(document.getElementById('macro-height-cm').value) || 0;
-            }
-
-            const resultDiv = document.getElementById('macro-result');
-            const formDiv = document.getElementById('macro-input-form');
-            const errorDiv = document.getElementById('macro-error');
-
-            resultDiv.classList.add('hidden');
-            errorDiv.classList.add('hidden');
-            
-            // Convert weight to KG for calculation (Mifflin-St Jeor formula expects KG and CM)
-            let weightKg = weightInput;
-            if (isImperial) {
-                weightKg = weightInput * LB_TO_KG;
-            }
-
-            if (isNaN(age) || isNaN(heightCm) || isNaN(weightKg) || age <= 0 || heightCm <= 0 || weightKg <= 0 || isNaN(activityMultiplier)) {
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Mifflin-St Jeor BMR Equation
-            let bmr;
-            if (gender === 'male') {
-                // BMR = (10 * kg) + (6.25 * cm) - (5 * age) + 5
-                bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age) + 5;
-            } else {
-                // BMR = (10 * kg) + (6.25 * cm) - (5 * age) - 161
-                bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age) - 161;
-            }
-
-            const tdee = Math.round(bmr * activityMultiplier);
-
-            // Calorie Goals 
-            const maintenance = tdee;
-            const cutting = tdee - 300; 
-            const bulking = tdee + 300; 
-
-            // Macro Breakdown (based on Maintenance Calories)
-            const proteinCal = maintenance * MACRO_SPLIT.protein;
-            const carbsCal = maintenance * MACRO_SPLIT.carbs;
-            const fatCal = maintenance * MACRO_SPLIT.fat;
-
-            const proteinGrams = Math.round(proteinCal / PROTEIN_CAL_PER_G);
-            const carbsGrams = Math.round(carbsCal / CARB_CAL_PER_G);
-            const fatGrams = Math.round(fatCal / FAT_CAL_PER_G);
-
-            // Update UI
-            document.getElementById('tdee-display').textContent = maintenance.toLocaleString();
-            document.getElementById('cutting-cal').textContent = `${cutting.toLocaleString()} kcal`;
-            document.getElementById('bulking-cal').textContent = `${bulking.toLocaleString()} kcal`;
-
-            document.getElementById('macro-protein').textContent = `${proteinGrams}g`;
-            document.getElementById('macro-carbs').textContent = `${carbsGrams}g`;
-            document.getElementById('macro-fat').textContent = `${fatGrams}g`;
-
-            formDiv.classList.add('hidden');
-            resultDiv.classList.remove('hidden');
-        }
-        
-        function resetMacro() {
-            document.getElementById('macro-age').value = '';
-            document.getElementById('macro-height-cm').value = '';
-            document.getElementById('macro-height-ft').value = '';
-            document.getElementById('macro-height-in').value = '';
-            document.getElementById('macro-weight').value = '';
-            document.getElementById('macro-result').classList.add('hidden');
-            document.getElementById('macro-input-form').classList.remove('hidden');
-            document.getElementById('macro-error').classList.add('hidden');
-            // Reset selects to first option
-            document.getElementById('macro-gender').selectedIndex = 0;
-            document.getElementById('macro-activity').selectedIndex = 0;
-            document.getElementById('macro-unit-system').selectedIndex = 0;
-            toggleMacroUnits();
-        }
-
-        
-        // --- 4. Estimated Bodyfat Calculator Logic ---
-        function toggleHipInput() {
-            const gender = document.getElementById('bodyfat-gender').value;
-            const hipField = document.getElementById('bodyfat-hip-field');
-            if (gender === 'female') {
-                hipField.classList.remove('hidden');
-            } else {
-                hipField.classList.add('hidden');
-            }
-            // Ensure inputs reset whenever the gender/unit changes to prevent confusion
-            document.getElementById('bodyfat-result').classList.add('hidden');
-            document.getElementById('bodyfat-input-form').classList.remove('hidden');
-        }
-
-        function toggleBodyfatUnits() {
-            const unitSystem = document.getElementById('bodyfat-unit-system').value;
-            const isImperial = unitSystem === 'imperial';
-            const unitLabel = isImperial ? 'in' : 'cm';
-
-            // Toggle height fields
-            const cmGroup = document.getElementById('bodyfat-height-cm-group');
-            const ftInGroup = document.getElementById('bodyfat-height-ftin-group');
-            if (isImperial) {
-                cmGroup.classList.add('hidden');
-                ftInGroup.classList.remove('hidden');
-            } else {
-                cmGroup.classList.remove('hidden');
-                ftInGroup.classList.add('hidden');
-            }
-
-            // Update circumference labels
-            document.getElementById('bodyfat-neck-label').textContent = `Neck Circumference (${unitLabel})`;
-            document.getElementById('bodyfat-waist-label').textContent = `Waist Circumference (${unitLabel}) - measured at navel`;
-            document.getElementById('bodyfat-hip-label').textContent = `Hip Circumference (${unitLabel}) - Women Only`;
-
-            // Reset view state
-            toggleHipInput();
-        }
-
-        function calculateBodyFat() {
-            const unitSystem = document.getElementById('bodyfat-unit-system').value;
-            const isImperial = unitSystem === 'imperial';
-            const gender = document.getElementById('bodyfat-gender').value;
-
-            const neckInput = parseFloat(document.getElementById('bodyfat-neck').value);
-            const waistInput = parseFloat(document.getElementById('bodyfat-waist').value);
-            const hipInput = parseFloat(document.getElementById('bodyfat-hip').value) || 0; 
-            
-            const resultDiv = document.getElementById('bodyfat-result');
-            const formDiv = document.getElementById('bodyfat-input-form');
-            const errorDiv = document.getElementById('bodyfat-error');
-
-            resultDiv.classList.add('hidden');
-            errorDiv.classList.add('hidden');
-            
-            // --- 1. Get Height Input & Convert to Inches ---
-            let heightIn;
-            if (isImperial) {
-                const ft = parseFloat(document.getElementById('bodyfat-height-ft').value) || 0;
-                const inches = parseFloat(document.getElementById('bodyfat-height-in').value) || 0;
-                heightIn = (ft * 12) + inches;
-            } else {
-                const heightCm = parseFloat(document.getElementById('bodyfat-height-cm').value);
-                heightIn = heightCm * CM_TO_IN;
-            }
-
-            // --- 2. Get Circumference Inputs & Convert to Inches ---
-            let neckIn = neckInput;
-            let waistIn = waistInput;
-            let hipIn = hipInput; 
-
-            if (!isImperial) {
-                neckIn *= CM_TO_IN;
-                waistIn *= CM_TO_IN;
-                hipIn *= CM_TO_IN;
-            }
-            
-            // --- 3. Input Validation (Ensure all required final values are valid) ---
-            if (isNaN(heightIn) || isNaN(neckIn) || isNaN(waistIn) || 
-                heightIn <= 0 || neckIn <= 0 || waistIn <= 0 || (gender === 'female' && isNaN(hipIn))
-            ) {
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-
-            let bodyFatPercent;
-            
-            // U.S. Navy Body Fat Formula (Simplified Log version, using Imperial inputs)
-            // Note: waistIn - neckIn and waistIn + hipIn - neckIn must be > 0 for Math.log10
-            if (gender === 'male') {
-                if (waistIn <= neckIn) {
-                    errorDiv.textContent = "Waist must be larger than Neck circumference for calculation.";
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                // BF% = 86.010 * log10(waist - neck) - 70.041 * log10(height) + 36.76
-                bodyFatPercent = 86.010 * Math.log10(waistIn - neckIn) - 70.041 * Math.log10(heightIn) + 36.76;
-            } else { // female
-                // BF% = 163.205 * log10(waist + hip - neck) - 97.684 * log10(height) - 78.387
-                 if (waistIn + hipIn <= neckIn) {
-                    errorDiv.textContent = "Sum of Waist and Hip must be larger than Neck circumference for calculation.";
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                bodyFatPercent = 163.205 * Math.log10(waistIn + hipIn - neckIn) - 97.684 * Math.log10(heightIn) - 78.387;
-            }
-            
-            // Clamp result to reasonable range (e.g., 5% to 50%)
-            bodyFatPercent = Math.max(5, Math.min(50, bodyFatPercent));
-
-            // Update UI
-            document.getElementById('bf-result-percent').textContent = bodyFatPercent.toFixed(1) + '%';
-            
-            // Determine category
-            const category = getBodyFatCategory(gender, bodyFatPercent);
-            document.getElementById('bf-result-category').textContent = category;
-
-            formDiv.classList.add('hidden');
-            resultDiv.classList.remove('hidden');
-        }
-
-        function resetBodyFat() {
-            // Clear inputs
-            document.getElementById('bodyfat-height-cm').value = '';
-            document.getElementById('bodyfat-height-ft').value = '';
-            document.getElementById('bodyfat-height-in').value = '';
-            document.getElementById('bodyfat-neck').value = '';
-            document.getElementById('bodyfat-waist').value = '';
-            document.getElementById('bodyfat-hip').value = '';
-
-            // Reset UI state
-            document.getElementById('bodyfat-result').classList.add('hidden');
-            document.getElementById('bodyfat-input-form').classList.remove('hidden');
-            document.getElementById('bodyfat-error').classList.add('hidden');
-            
-            // Reset gender and unit selections
-            document.getElementById('bodyfat-gender').selectedIndex = 0;
-            document.getElementById('bodyfat-unit-system').selectedIndex = 0;
-            toggleBodyfatUnits(); 
-        }
-
-        function getBodyFatCategory(gender, bf) {
-            if (gender === 'male') {
-                if (bf <= 5) return "Essential Fat";
-                if (bf <= 13) return "Athlete";
-                if (bf <= 17) return "Fitness";
-                if (bf <= 24) return "Acceptable";
-                return "Obese";
-            } else { // female
-                if (bf <= 13) return "Essential Fat";
-                if (bf <= 20) return "Athlete";
-                if (bf <= 24) return "Fitness";
-                if (bf <= 31) return "Acceptable";
-                return "Obese";
-            }
-        }
-
-        // --- 5. Interval Timer Logic (Refactored) ---
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-        let timerInterval = null;
-
-        // Configuration and State
-        let settings = {
-            workTime: 45,
-            restTime: 15,
-            setRestTime: 60,
-            cyclesPerSet: 8,
-            totalSets: 3
-        };
-
-        let state = {
-            timeLeft: settings.workTime,
-            currentSet: 1,
-            currentCycle: 1,
-            isWork: true,      // true: Work, false: Cycle Rest
-            isSetRest: false,  // true: Resting between sets
-            isRunning: false,
-            isReady: false
-        };
-
-        const container = document.getElementById('timer-container');
-        const timeDisplay = document.getElementById('time-display');
-        const cycleDisplay = document.getElementById('cycle-display');
-        const setDisplay = document.getElementById('set-display');
-        const statusLabel = document.getElementById('timer-label');
-        const startBtn = document.getElementById('start-btn');
-        const cycleTotalDisplay = document.getElementById('cycle-total-display');
-        const setTotalDisplay = document.getElementById('set-total-display');
-        const settingsPanel = document.getElementById('timer-settings-panel');
-        const displayPanel = document.getElementById('timer-display-panel');
-
-        function showSettings() {
-            resetTimer();
-            settingsPanel.classList.remove('hidden');
-            displayPanel.classList.add('hidden');
-            state.isReady = false;
-        }
-
-        function loadTimerSettings() {
-            // Read and validate inputs
-            const work = parseInt(document.getElementById('timer-work-time').value);
-            const rest = parseInt(document.getElementById('timer-rest-time').value);
-            const setRest = parseInt(document.getElementById('timer-set-rest-time').value);
-            const cycles = parseInt(document.getElementById('timer-cycles-per-set').value);
-            const sets = parseInt(document.getElementById('timer-total-sets').value);
-
-            if (work < 5 || rest < 0 || cycles < 1 || sets < 1 || setRest < 0 || isNaN(work) || isNaN(rest) || isNaN(cycles) || isNaN(sets) || isNaN(setRest)) {
-                console.error("Invalid timer settings. Please check all fields.");
-                return; 
-            }
-            
-            // Apply settings
-            settings.workTime = work;
-            settings.restTime = rest;
-            settings.setRestTime = setRest;
-            settings.cyclesPerSet = cycles;
-            settings.totalSets = sets;
-
-            // Initialize state for start
-            state.timeLeft = settings.workTime;
-            state.currentSet = 1;
-            state.currentCycle = 1;
-            state.isWork = true;
-            state.isSetRest = false;
-            state.isReady = true;
-
-            // Update display totals and initial state
-            cycleTotalDisplay.textContent = settings.cyclesPerSet;
-            setTotalDisplay.textContent = settings.totalSets;
-            
-            updateDisplay();
-            setTheme('rest'); // Start in a neutral/ready state
-
-            // Switch to display view
-            settingsPanel.classList.add('hidden');
-            displayPanel.classList.remove('hidden');
-        }
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            // Attempt to resume audio context if suspended (common issue on mobile)
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function beep(freq = 600, duration = 100, type = 'sine') {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            osc.start();
-            
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration / 1000);
-
-            osc.stop(audioCtx.currentTime + duration / 1000);
-        }
-
-        function toggleTimer() {
-            if (!state.isReady) {
-                loadTimerSettings();
-                if (!state.isReady) return;
-            }
-            
-            if (state.isRunning) {
-                stopTimer();
-            } else {
-                startTimer();
-            }
-        }
-
-        function startTimer() {
-            if (statusLabel.innerText === 'DONE') {
-                loadTimerSettings();
-            }
-            
-            state.isRunning = true;
-            initAudio();
-            startBtn.innerHTML = `<i data-lucide="pause" class="w-6 h-6 fill-current"></i> <span id="start-text">PAUSE</span>`;
-            lucide.createIcons();
-            
-            if (statusLabel.innerText === 'READY' || state.isWork) {
-                 statusLabel.innerText = "WORK";
-                 setTheme('work');
-            } else if (state.isSetRest) {
-                 statusLabel.innerText = "SET REST";
-                 setTheme('set-rest');
-            } else {
-                 statusLabel.innerText = "REST";
-                 setTheme('rest');
-            }
-
-            timerInterval = setInterval(() => {
-                state.timeLeft--;
-                updateDisplay();
-
-                if (state.timeLeft > 0 && state.timeLeft <= 3) {
-                    beep(600, 100, 'square'); 
-                }
-
-                if (state.timeLeft < 0) {
-                    switchPhase();
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            state.isRunning = false;
-            clearInterval(timerInterval);
-            if (statusLabel.innerText !== 'DONE') {
-                startBtn.innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-current"></i> <span id="start-text">RESUME</span>`;
-                lucide.createIcons();
-            }
-        }
-
-        function resetTimer() {
-            stopTimer();
-            clearInterval(timerInterval);
-            
-            // Reset state to initial configured values
-            state.timeLeft = settings.workTime;
-            state.currentSet = 1;
-            state.currentCycle = 1;
-            state.isWork = true;
-            state.isSetRest = false;
-            state.isRunning = false;
-            
-            startBtn.innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-current"></i> <span id="start-text">START</span>`;
-            lucide.createIcons();
-            
-            container.classList.remove('state-work', 'state-rest', 'state-set-rest');
-            statusLabel.innerText = "READY";
-            
-            updateDisplay();
-        }
-
-        function switchPhase() {
-            beep(900, 300, 'square'); 
-
-            if (state.isWork) {
-                // Transition: Work -> Cycle Rest or Set Rest
-                
-                if (state.currentCycle < settings.cyclesPerSet) {
-                    // Go to normal Cycle Rest
-                    state.isWork = false;
-                    state.timeLeft = settings.restTime;
-                    statusLabel.innerText = "REST";
-                    setTheme('rest');
-                } else if (state.currentSet < settings.totalSets && settings.setRestTime > 0) {
-                    // Set is over, go to Set Rest
-                    state.isWork = false;
-                    state.isSetRest = true;
-                    state.timeLeft = settings.setRestTime;
-                    statusLabel.innerText = "SET REST";
-                    setTheme('set-rest');
-                } else if (state.currentSet < settings.totalSets && settings.setRestTime === 0) {
-                    // Set is over, no set rest, immediately start next set
-                    state.currentSet++;
-                    state.currentCycle = 1; // Reset cycles for the new set
-                    state.isWork = true;
-                    state.isSetRest = false;
-                    state.timeLeft = settings.workTime;
-                    statusLabel.innerText = "WORK";
-                    setTheme('work');
-                } else {
-                    // Last cycle of last set. FINISH!
-                    finishWorkout();
-                    return;
-                }
-                
-            } else if (state.isSetRest) {
-                // Transition: Set Rest -> Next Set Work
-                state.isSetRest = false;
-                state.currentSet++;
-                state.currentCycle = 1; // Reset cycles for the new set
-                state.isWork = true;
-                state.timeLeft = settings.workTime;
-                statusLabel.innerText = "WORK";
-                setTheme('work');
-            } else { // In regular cycle rest (state.isWork is false, state.isSetRest is false)
-                // Transition: Cycle Rest -> Next Cycle Work
-                state.currentCycle++;
-                state.isWork = true;
-                state.timeLeft = settings.workTime;
-                statusLabel.innerText = "WORK";
-                setTheme('work');
-            }
-            
-            updateDisplay();
-        }
-
-        function finishWorkout() {
-            stopTimer();
-            statusLabel.innerText = "DONE";
-            timeDisplay.innerText = "0";
-            state.isRunning = false;
-            
-            // Final celebratory beeps
-            setTimeout(() => beep(600, 100), 0);
-            setTimeout(() => beep(800, 100), 150);
-            setTimeout(() => beep(1200, 300), 300);
-            
-            startBtn.innerHTML = `<i data-lucide="rotate-ccw" class="w-6 h-6"></i> <span id="start-text">RESTART</span>`;
-            lucide.createIcons();
-        }
-
-        function updateDisplay() {
-            // Ensure time is non-negative for display
-            const timeToDisplay = Math.max(0, state.timeLeft);
-            timeDisplay.innerText = timeToDisplay.toString().padStart(2, '0');
-            
-            let displayCycle = state.currentCycle;
-            let displaySet = state.currentSet;
-            
-            // If currently in a rest phase (cycle rest or set rest), the display should still show the completed cycle/set
-            if (!state.isWork) {
-                 if (state.isSetRest) {
-                     // If in SET REST, we finished the last cycle of the previous set
-                     displayCycle = settings.cyclesPerSet;
-                 } else { 
-                     // If in CYCLE REST, we finished a cycle, so we show that cycle number
-                     displayCycle = state.currentCycle;
-                 }
-            }
-            
-            cycleDisplay.innerText = displayCycle;
-            setDisplay.innerText = displaySet;
-        }
-
-        function setTheme(mode) {
-            container.classList.remove('state-work', 'state-rest', 'state-set-rest');
-            if (mode === 'work') {
-                container.classList.add('state-work');
-            } else if (mode === 'rest') {
-                container.classList.add('state-rest');
-            } else if (mode === 'set-rest') {
-                container.classList.add('state-set-rest');
-            }
-        }
-        
-        // Initial setup
+        // Initialize on load
         window.onload = () => {
-             // Initial load of default settings to ensure the UI is populated correctly
-             loadTimerSettings();
-             resetTimer(); // Ensure it starts in a clean READY state showing settings.
-             showSettings(); // Force settings panel open
+             const yearSpanPage = document.getElementById('current-year-page');
+             const yearSpanModal = document.getElementById('current-year-modal');
+             const currentYear = new Date().getFullYear();
              
-             // Initialize unit displays for calculators
-             toggleBodyfatUnits();
-             toggleMacroUnits();
+             if (yearSpanPage) yearSpanPage.textContent = currentYear;
+             if (yearSpanModal) yearSpanModal.textContent = currentYear;
+             
+             lucide.createIcons();
         }
     </script>
 </body>
